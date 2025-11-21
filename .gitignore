@@ -32,3 +32,8 @@ Thumbs.db
 !user_ratings/.gitkeep
 !output/.gitkeep
 !backup/.gitkeep
+
+# Secrets
+secrets/
+info.txt
+.streamlit/secrets.toml

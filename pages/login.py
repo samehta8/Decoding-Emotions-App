@@ -69,7 +69,16 @@ def show():
                 else:
                     # Valid returning user
                     st.session_state.user.user_id = user_id_input
-                    st.session_state.page = 'videoplayer'
+
+                    # Check if familiarization is enabled
+                    config = st.session_state.config
+                    enable_familiarization = config.get('settings', {}).get('enable_familiarization', True)
+
+                    if enable_familiarization:
+                        st.session_state.page = 'pre_familiarization'
+                    else:
+                        st.session_state.page = 'videoplayer'
+
                     st.rerun()
             else:
                 # New user - go to questionnaire

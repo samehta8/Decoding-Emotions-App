@@ -1,5 +1,5 @@
 paths:
-  metadata_path: "/home/max/drive/projects/3_Creativity/data/metamehta.csv"
+  metadata_path: "../data_saumya/meta_emotions.csv"
   
   # path to external drive on Linux
   #video_path: "/media/max/Elements/videos_events_sample"
@@ -9,7 +9,10 @@ paths:
   
   # dummy videos on localhost max
   #video_path: "/home/max/drive/projects/3_Creativity/creativity-rating-app/videos_all/"
-  video_path: "/home/max/drive/projects/3_Creativity/creativity-rating-app/videos/"
+  video_path: "../data_saumya/videos/"
+
+  # Familiarization videos (always the same 3 videos for all users)
+  familiarization_video_path: "../data_saumya/videos_familiarization"
 
 settings:
   min_ratings_per_video: 2
@@ -18,6 +21,7 @@ settings:
   display_metadata: false  # Show metadata (team, player, type, etc.) at top of video screen
   display_pitch: false  # Show pitch visualization next to video
   video_playback_mode: "once"  # "loop" = video repeats, "once" = plays once and cannot be restarted
+  enable_familiarization: true  # Set to false to skip all familiarization screens (pre-famil, famil, post-famil)
 
   # Video selection and stratification settings
   number_of_videos: null  # Maximum videos to show per session (null = show all available)
@@ -26,9 +30,12 @@ settings:
   # Leave empty or comment out to use simple random sampling
   variables_for_stratification:
   # Example configuration:
-    - variable: "lowHighPD"
+    - variable: "LowHighPD"
       levels: ["Low", "High"]
       proportions: [0.5, 0.5]  # Must sum to 1.0
+    - variable: "WinLose"
+      levels: ["Win", "Loss"]
+      proportions: [0.5, 0.5]
     - variable: "OlympicParalympic"
       levels: ["Olympic", "Paralympic"]
       proportions: [0.5, 0.5]
@@ -46,6 +53,13 @@ settings:
       column: "type"
     - label: "Body Part"
       column: "bodypart"
+
+  # Storage mode for user data and ratings
+  # Options:
+  #   "local"  - Save JSON files to local filesystem only (for development)
+  #   "online" - Save to Google Sheets + Google Drive JSON (for production)
+  #   "both"   - Save to all three: Google Sheets + Google Drive + Local filesystem (maximum redundancy)
+  storage_mode: "online"
 
 # Screen layout proportions for VideoPlayerScreen
 # These values control the relative heights of different sections (must sum to 1.0)

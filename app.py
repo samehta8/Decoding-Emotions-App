@@ -4,6 +4,7 @@ Creativity Rating App - Streamlit Version
 Main application file with navigation and session state management.
 """
 import streamlit as st
+
 import os
 import sys
 
@@ -78,6 +79,18 @@ elif current_page == 'login':
 elif current_page == 'questionnaire':
     import pages.questionnaire as questionnaire
     questionnaire.show()
+
+elif current_page == 'pre_familiarization':
+    import pages.pre_familiarization as pre_familiarization
+    pre_familiarization.show()
+
+elif current_page == 'familiarization':
+    import pages.familiarization as familiarization
+    familiarization.show()
+
+elif current_page == 'post_familiarization':
+    import pages.post_familiarization as post_familiarization
+    post_familiarization.show()
 
 elif current_page == 'videoplayer':
     import pages.videoplayer as videoplayer

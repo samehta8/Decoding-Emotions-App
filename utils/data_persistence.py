@@ -1,36 +1,84 @@
 """
 Data persistence functions for saving and loading user data and ratings.
+Implements flexible storage strategy based on config: local, online, or both.
 """
 import json
 import os
+import streamlit as st
 from datetime import datetime
+from utils.gsheets_manager import (
+    append_rating_to_gsheets,
+    get_rated_videos_for_user_from_gsheets,
+    append_user_to_gsheets,
+    user_exists_in_gsheets
+)
 
 def save_user_data(user):
     """
-    Save user demographic data to a JSON file.
-    Creates user_data directory if it doesn't exist.
+    Save user demographic data based on configured storage_mode.
+
+    Storage modes:
+    - "local": Save to local JSON only
+    - "online": Save to Google Sheets only
+    - "both": Save to both Google Sheets and local JSON
+
+    Parameters:
+    - user: User object with user_id and demographic data
+
+    Returns:
+    - True if at least one save method successful, False if all fail
     """
-    try:
-        os.makedirs('user_data', exist_ok=True)
+    # Get user data dictionary
+    user_data = user.to_dict()
 
-        filename = f"{user.user_id}.json"
-        path = os.path.join('user_data', filename)
+    # Get storage mode from config
+    config = st.session_state.get('config', {})
+    storage_mode = config.get('settings', {}).get('storage_mode', 'both')
 
-        data = user.to_dict()
+    # Track success of each write method
+    gsheets_success = False
+    local_json_success = False
 
-        with open(path, 'w') as f:
-            json.dump(data, f, indent=2)
+    # ONLINE: Write to Google Sheets
+    if storage_mode in ['online', 'both']:
+        try:
+            gsheets_success = append_user_to_gsheets(user_data, worksheet="users")
+            if gsheets_success:
+                print(f"[INFO] ✓ User data saved to Google Sheets: {user.user_id}")
+        except Exception as e:
+            print(f"[WARNING] Google Sheets write failed for user data: {e}")
 
-        print(f"[INFO] User data saved: {filename}")
+    # LOCAL: Write to local JSON file
+    if storage_mode in ['local', 'both']:
+        try:
+            os.makedirs('user_data', exist_ok=True)
+            filename = f"{user.user_id}.json"
+            path = os.path.join('user_data', filename)
+
+            with open(path, 'w') as f:
+                json.dump(user_data, f, indent=2)
+
+            local_json_success = True
+            print(f"[INFO] ✓ User data saved to local JSON: {filename}")
+        except Exception as e:
+            print(f"[WARNING] Local JSON write failed for user data: {e}")
+
+    # Return True if at least one method succeeded
+    success = gsheets_success or local_json_success
+    if success:
         return True
-    except Exception as e:
-        print(f"[ERROR] Failed to save user data: {e}")
+    else:
+        print(f"[ERROR] CRITICAL: All storage methods failed for user {user.user_id}")
         return False
 
 def save_rating(user_id, action_id, scale_values, action_not_recognized=False):
     """
-    Save rating data to a JSON file.
-    Creates user_ratings directory if it doesn't exist.
+    Save rating data based on configured storage_mode.
+
+    Storage modes:
+    - "local": Save to local JSON only
+    - "online": Save to Google Sheets only
+    - "both": Save to both Google Sheets and local JSON
 
     Parameters:
     - user_id: User identifier
@@ -39,38 +87,62 @@ def save_rating(user_id, action_id, scale_values, action_not_recognized=False):
     - action_not_recognized: Boolean flag
 
     Returns:
-    - True if save successful, False otherwise
+    - True if at least one save method successful, False if all fail
     """
-    try:
-        os.makedirs('user_ratings', exist_ok=True)
+    # Build rating data
+    rating_data = {
+        'user_id': user_id,
+        'id': action_id,
+        'action_not_recognized': action_not_recognized
+    }
 
-        # Build rating data
-        rating_data = {
-            'user_id': user_id,
-            'id': action_id,
-            'action_not_recognized': action_not_recognized
-        }
+    # Add each scale's value
+    for title, value in scale_values.items():
+        # Use title as key (sanitized for JSON compatibility)
+        key = title.lower().replace(' ', '_')
+        rating_data[key] = value
 
-        # Add each scale's value
-        for title, value in scale_values.items():
-            # Use title as key (sanitized for JSON compatibility)
-            key = title.lower().replace(' ', '_')
-            rating_data[key] = value
+    # Get storage mode from config
+    config = st.session_state.get('config', {})
+    storage_mode = config.get('settings', {}).get('storage_mode', 'both')
 
-        # Save to file
-        filename = os.path.join('user_ratings', f"{user_id}_{action_id}.json")
-        with open(filename, 'w') as f:
-            json.dump(rating_data, f, indent=2)
+    # Track success of each write method
+    gsheets_success = False
+    local_json_success = False
 
-        print(f"[INFO] Rating saved: {user_id}_{action_id}.json")
+    # ONLINE: Write to Google Sheets
+    if storage_mode in ['online', 'both']:
+        try:
+            gsheets_success = append_rating_to_gsheets(rating_data, worksheet="ratings")
+            if gsheets_success:
+                print(f"[INFO] ✓ Rating saved to Google Sheets: {user_id}_{action_id}")
+        except Exception as e:
+            print(f"[WARNING] Google Sheets write failed: {e}")
+
+    # LOCAL: Write to local JSON file
+    if storage_mode in ['local', 'both']:
+        try:
+            os.makedirs('user_ratings', exist_ok=True)
+            filename = os.path.join('user_ratings', f"{user_id}_{action_id}.json")
+            with open(filename, 'w') as f:
+                json.dump(rating_data, f, indent=2)
+            local_json_success = True
+            print(f"[INFO] ✓ Rating saved to local JSON: {user_id}_{action_id}.json")
+        except Exception as e:
+            print(f"[WARNING] Local JSON write failed: {e}")
+
+    # Return True if at least one method succeeded
+    success = gsheets_success or local_json_success
+    if success:
         return True
-    except Exception as e:
-        print(f"[ERROR] Failed to save rating: {e}")
+    else:
+        print(f"[ERROR] CRITICAL: All storage methods failed for {user_id}_{action_id}")
         return False
 
 def user_exists(user_id):
     """
-    Check if a user_id exists in the user_ratings directory.
+    Check if a user_id exists in the system.
+    Tries Google Sheets first (primary), falls back to local JSON (backup).
 
     Parameters:
     - user_id: User identifier to check
@@ -78,19 +150,34 @@ def user_exists(user_id):
     Returns:
     - True if user has at least one rating file, False otherwise
     """
+    # PRIMARY: Try Google Sheets first
+    try:
+        if user_exists_in_gsheets(user_id, worksheet="users"):
+            print(f"[INFO] User {user_id} found in Google Sheets")
+            return True
+    except Exception as e:
+        print(f"[WARNING] Failed to check user existence in Google Sheets: {e}")
+
+    # FALLBACK: Check local JSON files
     try:
         if not os.path.exists('user_ratings'):
             return False
 
         user_ratings_files = os.listdir('user_ratings')
-        return any(f.startswith(f"{user_id}_") for f in user_ratings_files)
+        exists = any(f.startswith(f"{user_id}_") for f in user_ratings_files)
+
+        if exists:
+            print(f"[INFO] User {user_id} found in local JSON files")
+
+        return exists
     except Exception as e:
-        print(f"[ERROR] Failed to check user existence: {e}")
+        print(f"[ERROR] Failed to check user existence in both sources: {e}")
         return False
 
 def get_rated_videos_for_user(user_id):
     """
     Get list of video IDs already rated by a user.
+    Tries Google Sheets first (primary), falls back to local JSON (backup).
 
     Parameters:
     - user_id: User identifier
@@ -98,6 +185,16 @@ def get_rated_videos_for_user(user_id):
     Returns:
     - List of action IDs (without .mp4 extension)
     """
+    # PRIMARY: Try Google Sheets first
+    try:
+        gsheets_ids = get_rated_videos_for_user_from_gsheets(user_id, worksheet="ratings")
+        if gsheets_ids:
+            print(f"[INFO] Retrieved {len(gsheets_ids)} rated videos from Google Sheets for user {user_id}")
+            return gsheets_ids
+    except Exception as e:
+        print(f"[WARNING] Failed to get rated videos from Google Sheets: {e}")
+
+    # FALLBACK: Use local JSON files
     try:
         if not os.path.exists('user_ratings'):
             return []
@@ -111,7 +208,8 @@ def get_rated_videos_for_user(user_id):
                 action_id = f.replace('.json', '').replace(f'{user_id}_', '')
                 rated_ids.append(action_id)
 
+        print(f"[INFO] Retrieved {len(rated_ids)} rated videos from JSON backup for user {user_id}")
         return rated_ids
     except Exception as e:
-        print(f"[ERROR] Failed to get rated videos: {e}")
+        print(f"[ERROR] Failed to get rated videos from both sources: {e}")
         return []

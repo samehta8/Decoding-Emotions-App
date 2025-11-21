@@ -564,12 +564,3 @@ def show_completion_message():
             st.session_state.user_id_confirmed = False
             st.session_state.video_initialized = False
             st.rerun()
-
-    with col3:
-        if st.button("Export Data 📊", use_container_width=True, type="primary"):
-            try:
-                from utils.export_to_csv import export_all_data
-                export_all_data()
-                st.success("✅ Data exported successfully! Check the 'output' folder.")
-            except Exception as e:
-                st.error(f"❌ Export failed: {e}")

@@ -200,7 +200,15 @@ def show_confirmation_panel():
         if st.button("Understood. Proceed ▶️", use_container_width=True, type="primary"):
             # Save user data and proceed
             if save_user_data(user):
-                st.session_state.page = 'videoplayer'
+                # Check if familiarization is enabled
+                config = st.session_state.config
+                enable_familiarization = config.get('settings', {}).get('enable_familiarization', True)
+
+                if enable_familiarization:
+                    st.session_state.page = 'pre_familiarization'
+                else:
+                    st.session_state.page = 'videoplayer'
+
                 st.rerun()
             else:
                 st.error("Failed to save user data. Please try again.")

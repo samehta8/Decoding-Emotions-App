@@ -11,24 +11,23 @@ def show():
     # Optionally adjust spacing (top, bottom, between_elements in rem)
     # set_spacing(top=1, bottom=0.5, between_elements=0.3)
 
-    st.title("⚽ Creativity Rating App")
+    #st.title("⚽ Creativity Rating App")
 
     st.markdown("""
     ## Welcome!
 
-    This application is designed to collect subjective ratings of soccer actions from video clips.
+    You will be receiving specific information regarding the study soon. Here you will find an overview of the steps involved in the study:
 
     ### Instructions:
 
     1. **Login**: First, you'll indicate whether you've participated before
     2. **Questionnaire**: New users will complete a brief demographic questionnaire
-    3. **Rating**: You'll watch video clips and rate various aspects of each action
-    4. **Progress**: Your ratings are automatically saved after each video
+    3. **Familiarization**: You'll go through practice trials to get used to the rating interface
+    4. **Rating**: You'll watch video clips and rate various aspects of each clip
 
     ### Important Notes:
 
     - Please complete ratings in a quiet environment without distractions
-    - Your responses will help us understand creativity assessment in soccer
     - All data is anonymized using a generated user ID
     - You can take breaks between videos - your progress is saved
 
