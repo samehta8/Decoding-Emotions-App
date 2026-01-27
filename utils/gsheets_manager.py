@@ -172,7 +172,7 @@ def read_ratings_from_gsheets(worksheet="ratings"):
         if conn is None:
             return pd.DataFrame()
 
-        df = conn.read(worksheet=worksheet)
+        df = conn.read(worksheet=worksheet, ttl=0)
         print(f"[INFO] Read {len(df)} ratings from Google Sheets")
         return df
 
@@ -309,7 +309,7 @@ def read_users_from_gsheets(worksheet="users"):
         if conn is None:
             return pd.DataFrame()
 
-        df = conn.read(worksheet=worksheet)
+        df = conn.read(worksheet=worksheet, ttl=0)
         print(f"[INFO] Read {len(df)} users from Google Sheets")
         return df
 
